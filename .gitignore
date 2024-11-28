@@ -1,0 +1,5 @@
+/RBAC-Backend/node_modules/
+/RBAC-Frontend/node_modules/
+
+/RBAC-Frontend/.env
+/RBAC-Backend/.env
