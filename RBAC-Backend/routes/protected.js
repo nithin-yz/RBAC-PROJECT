@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/user');
 const auth = require('../middleware/auth');
+const { addToBlacklist } = require('../services/blacklistservice');
 const router = express.Router();
 
 // Dashboard route with role-based content
@@ -68,7 +69,12 @@ router.put('/promote', auth(['Admin']), async (req, res) => {
 
 // Logout route (for front-end to clear token)
 router.post('/logout', auth(['Admin', 'Moderator', 'User']), (req, res) => {
-    res.json({ message: 'Logged out successfully' });
-});
+    try {
+        const token = req.header('Authorization').split(' ')[1];
+        addToBlacklist(token); // Blacklist the token
+        res.json({ message: 'Logged out successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error logging out' });
+    }});
 
 module.exports = router;
