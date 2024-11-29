@@ -7,49 +7,52 @@ const router = express.Router();
 // Dashboard route with role-based content
 router.get('/dashboard', auth(['Admin', 'Moderator', 'User']), async (req, res) => {
     try {
-        console.log("worked")
-        console.log(req.user)
         const { role, id } = req.user;
-        const user = await User.findById(id);  // Get the logged-in user
 
-        // Admin Dashboard
+        // Fetch current user's information
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Role-specific logic
+        let users = [];
         if (role === 'Admin') {
-            const users = await User.find();  // Admin can see all users
-            return res.status(200).json({ 
-                message: `you are ${user.role} of this site`, 
-                username:user.name,
-                users: users  // Send all users data
-            });
-        }
-
-        // Moderator Dashboard
-        if (role === 'Moderator') {
-            const users = await User.find({ role: 'User' });  // Moderator sees only Users
+            // Admin sees all users except other Admins (so we filter out Admins)
+            users = await User.find({ role: { $in: ['User', 'Moderator'] } });
+        } else if (role === 'Moderator') {
+            // Moderator sees only Users
+            users = await User.find({ role: 'User' });
+        } else if (role === 'User') {
+            // Users only see their own details
             return res.status(200).json({
-                message: `Welcome Moderator ${user.name}`, 
-                users: users  // Send users who are not moderators
+                message: `Welcome ${role} ${user.name}`,
+                username: user.name,
+                users: [] // No other users for normal users
             });
         }
 
-        // User Dashboard
-        if (role === 'User') {
-            return res.status(200).json({
-                message: `Welcome ${user.name}, You are a Member!`, 
-                users: []  // No user list for regular users
-            });
-        }
-
+        // Return data based on the user's role
+        return res.status(200).json({
+            message: `Welcome ${role} ${user.name}`,
+            username: user.name,
+            role,  // Send the role in the response so frontend can check it
+            users, // Send the appropriate user list based on role
+        });
     } catch (err) {
+        console.error(err);
         return res.status(500).json({ message: 'Error fetching dashboard data' });
     }
 });
 
 // Promote a user (Admin can promote to Moderator or Admin)
-router.put('/promote', auth(['Admin']), async (req, res) => {
-    const { userId, newRole } = req.body;  // userId of the user to promote
+router.put('/promote', auth(['Admin', 'Moderator']), async (req, res) => {
+    const { userId, newRole } = req.body;
+    const { role } = req.user;
 
-    if (!['Admin', 'Moderator'].includes(newRole)) {
-        return res.status(400).json({ message: 'Invalid role for promotion' });
+    // Validate new role
+    if (!['Admin', 'Moderator', 'User'].includes(newRole)) {
+        return res.status(400).json({ message: 'Invalid role for promotion/demotion' });
     }
 
     try {
@@ -58,12 +61,34 @@ router.put('/promote', auth(['Admin']), async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user.role = newRole;  // Assign new role
+        // Prevent self-demotion for Admin
+        if (user._id.toString() === req.user.id && newRole !== 'Admin') {
+            return res.status(403).json({ message: 'You cannot change your own role' });
+        }
+
+        // Only Admin can promote to Admin
+        if (role === 'Moderator' && newRole === 'Admin') {
+            return res.status(403).json({ message: 'Moderators cannot promote to Admin' });
+        }
+
+        // Moderator can promote to Moderator only
+        if (role === 'Moderator' && newRole !== 'Moderator') {
+            return res.status(403).json({ message: 'Moderators can only promote to Moderator' });
+        }
+
+        // Admin can promote to Admin, but only to Users or Moderators
+        if (role === 'Admin' && newRole === 'Admin' && user.role !== 'User' && user.role !== 'Moderator') {
+            return res.status(403).json({ message: 'Admin can only promote Users or Moderators to Admin' });
+        }
+
+        // Update role
+        user.role = newRole;
         await user.save();
 
-        return res.status(200).json({ message: `${user.name} has been promoted to ${newRole}` });
+        return res.status(200).json({ message: `${user.name} has been updated to ${newRole}` });
     } catch (err) {
-        return res.status(500).json({ message: 'Error promoting user' });
+        console.error(err);
+        return res.status(500).json({ message: 'Error updating user role' });
     }
 });
 
@@ -74,7 +99,9 @@ router.post('/logout', auth(['Admin', 'Moderator', 'User']), (req, res) => {
         addToBlacklist(token); // Blacklist the token
         res.json({ message: 'Logged out successfully' });
     } catch (err) {
+        console.log(err);
         res.status(500).json({ message: 'Error logging out' });
-    }});
+    }
+});
 
 module.exports = router;

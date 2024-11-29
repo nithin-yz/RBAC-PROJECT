@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const blacklist = new Set();
 
 const addToBlacklist = (token) => {

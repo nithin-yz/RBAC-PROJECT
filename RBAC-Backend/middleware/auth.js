@@ -1,8 +1,10 @@
 const { isTokenBlacklisted } = require('../services/blacklistservice');
+const jwt = require('jsonwebtoken');
 
 const auth = (roles) => (req, res, next) => {
     try {
         const token = req.header('Authorization');
+       
         if (!token) {
             return res.status(403).json({ message: 'Access denied, no token provided' });
         }
@@ -24,9 +26,17 @@ const auth = (roles) => (req, res, next) => {
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
-
+console.log("reached here")
         next();
     } catch (err) {
+        console.log("here is the error",
+
+
+// ****
+
+err
+
+        )
         res.status(500).json({ error: 'Invalid token or error verifying token' });
     }
 };
