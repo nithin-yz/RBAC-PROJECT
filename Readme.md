@@ -68,5 +68,8 @@ MongoDB: Stores user data and role information. The backend allows for role modi
 
 
 *************************************************************************************************
-For frontend setup look at    ------       Frontendsetupreadme.md
-for backendsetup look  at     ------       Backendsetupreadme.md
+
+For frontend setup look at -------Frontendsetup.md
+
+For backendsetup look at----------Backendsetup.md
+
