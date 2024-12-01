@@ -8,11 +8,40 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+
+    const isTokenValid = (token) => {
+        try {
+            const decodedToken = JSON.parse(atob(token.split('.')[1]));  // Decode the token
+            const expirationTime = decodedToken.exp * 1000;  // Convert exp to milliseconds
+            return Date.now() < expirationTime;  // Check if token is not expired
+        } catch (error) {
+
+
+            return false; // If decoding fails, consider the token invalid
+        }
+    };
+
+
     // Redirect user to dashboard if already logged in
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
+
+           const valu =isTokenValid (token)
+
+          if(valu){
+
             navigate('/dashboard');  // If user is already logged in, redirect to dashboard
+
+
+          }else{
+
+            localStorage.removeItem("token")
+            navigate('/login')
+
+          }
+
+
         }
     }, [navigate]);
 

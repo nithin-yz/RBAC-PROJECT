@@ -7,6 +7,7 @@ const PrivateRoute = ({ children }) => {
     const isTokenValid = decodedToken && decodedToken.exp * 1000 > Date.now(); // Check if the token is expired
 
     if (!token || !isTokenValid) {
+        localStorage.removeItem('token')
         return <Navigate to="/" replace />;
     }
 
