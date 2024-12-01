@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Root from './components/Root';
-import Login from './components/Login';
-import Register from './components/Register';
+import Login from './components/login';
+import Register from './components/register';
 import Dashboard from './components/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 import NotFound from './components/Notfound';

@@ -74,7 +74,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: '1h',
         });
-console.log(token,"genrated token")
+
         res.json({ token, message: 'Login successful' });
     } catch (err) {
         console.log(err);
